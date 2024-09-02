@@ -1,0 +1,407 @@
+#import pandas as pd
+import pyodbc
+from sqlalchemy import create_engine, engine
+from sqlalchemy.engine.url import URL
+from sqlalchemy import create_engine, Table, MetaData
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, BigInteger
+import re
+
+
+#print(pyodbc.drivers())
+
+#import pyodbc
+try:
+    conn = pyodbc.connect(
+        r'DRIVER={ODBC Driver 17 for SQL Server};'
+        r'SERVER=MUNEEB_LENOVO;'  # Replace with your server
+        r'DATABASE=Desertation;'  # Replace with your database
+        r'Trusted_Connection=yes;'
+    )
+    print("Connection successful!")
+except Exception as e:
+    print("Error occurred:", e)
+
+#import pyodbc
+import pandas as pd
+from sqlalchemy import create_engine
+
+def check_drivers():
+    print("Available ODBC drivers:")
+    for driver in pyodbc.drivers():
+        print(driver)
+    print("\n")
+
+def test_pyodbc_connection(server, database):
+    try:
+        connection_string = (
+            f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+            f"SERVER={server};"
+            f"DATABASE={database};"
+            "Trusted_Connection=yes;"
+        )
+        conn = pyodbc.connect(connection_string)
+        print("Direct pyodbc connection successful.")
+        conn.close()
+    except Exception as e:
+        print("Failed to connect using pyodbc:", str(e))
+    print("\n")
+
+def test_pyodbc_query(server, database):
+    try:
+        connection_string = (
+            f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+            f"SERVER={server};"
+            f"DATABASE={database};"
+            "Trusted_Connection=yes;"
+        )
+        conn = pyodbc.connect(connection_string)
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")  # Simple query
+        print("Query executed successfully:", cursor.fetchone())
+        conn.close()
+    except Exception as e:
+        print("Failed to execute query using pyodbc:", str(e))
+    print("\n")
+
+def test_sqlalchemy_connection(connection_string):
+    try:
+        engine = create_engine(connection_string, echo=True)
+        with engine.connect() as conn:
+            result = conn.execute("SELECT 1")
+            print("SQLAlchemy connection successful. Query result:", result.fetchone())
+    except Exception as e:
+        print("Failed to connect or query using SQLAlchemy:", str(e))
+    print("\n")
+
+def main():
+    server = 'MUNEEB_LENOVO'
+    database = 'Desertation'
+
+    # Check available drivers
+    check_drivers()
+
+    # Test connection using pyodbc
+    test_pyodbc_connection(server, database)
+
+    # Test query execution using pyodbc
+    test_pyodbc_query(server, database)
+
+    # Build connection string for SQLAlchemy
+    connection_string = f'mssql+pyodbc://@{server}/{database}?trusted_connection=yes;driver=ODBC Driver 17 for SQL Server'
+
+    # Test connection using SQLAlchemy
+    test_sqlalchemy_connection(connection_string)
+
+if __name__ == "__main__":
+    main()
+
+
+#server = 'MUNEEB_LENOVO'
+database = 'Desertation'
+connection_url = URL.create(
+    "mssql+pyodbc",
+    username="",
+    password="",
+    host=server,
+    database=database,
+    query={
+        "trusted_connection": "yes",
+        "driver": "ODBC Driver 17 for SQL Server"
+    }
+)
+
+engine = create_engine(connection_url, echo=True)
+
+try:
+    with engine.connect() as conn:
+        result = conn.execute("SELECT 1")
+        print("Query result:", result.fetchone())
+except Exception as e:
+    print("SQLAlchemy connection error:", e)
+
+#from sqlalchemy import create_engine, Table, MetaData
+import pandas as pd
+
+# Server and database configuration
+server = 'MUNEEB_LENOVO'
+database = 'Desertation'
+
+# Ensure the driver name matches exactly what's available in your ODBC Data Sources.
+# You can check available ODBC drivers by running `pyodbc.drivers()` in your Python environment.
+driver = 'ODBC Driver 17 for SQL Server'
+
+# Correcting the connection string format:
+connection_string = f'mssql+pyodbc://{server}/{database}?trusted_connection=yes&driver={driver}'
+
+try:
+    # Create SQLAlchemy engine using the corrected connection string
+    engine = create_engine(connection_string)
+    print("Connection to the database successful!")
+
+    # Reflecting the table 'Final_Data'
+    metadata = MetaData()
+    final_data = Table('Final_Data', metadata, autoload_with=engine)
+
+    # Querying the database for all records in 'Final_Data'
+    with engine.connect() as conn:
+        query = final_data.select()
+        result = conn.execute(query)
+        final_data_df = pd.DataFrame(result.fetchall(), columns=result.keys())
+
+    # Displaying the first few rows of the DataFrame
+    print(final_data_df.head())
+
+except Exception as e:
+    print("An error occurred:", e)
+
+
+#connection_url = URL.create(
+    "mssql+pyodbc",
+    username="",
+    password="",
+    host=server,
+    database=database,
+    query={
+        "trusted_connection": "yes",
+        "driver": "ODBC Driver 17 for SQL Server"
+    }
+)
+
+#
+Base = declarative_base()
+
+class Dimension_Gender(Base):
+    __tablename__ = 'Dimension_Gender'
+    Gender_ID = Column(Integer, primary_key=True)
+    Gender = Column(String)
+
+class Dimension_Birth(Base):
+    __tablename__ = 'Dimension_Birth'
+    Birth_ID = Column(Integer, primary_key=True)
+    Birth = Column(String)
+    Birth_Year = Column(Integer)
+    Birth_Town = Column(String)
+    Birth_City = Column(String)
+    Birth_County = Column(String)
+    Birth_Country = Column(String)
+
+class Dimension_Death(Base):
+    __tablename__ = 'Dimension_Death'
+    Death_ID = Column(Integer, primary_key=True)
+    Death = Column(String)
+    Death_Year = Column(Integer)
+    Death_Town = Column(String)
+    Death_City = Column(String)
+    Death_County = Column(String)
+    Death_Country = Column(String)
+
+class Dimension_Occupation(Base):
+    __tablename__ = 'Dimension_Occupation'
+    Occupation_ID = Column(Integer, primary_key=True)
+    Occupation = Column(String)
+    Alternative_Names = Column(String)
+
+class Dimension_Parent(Base):
+    __tablename__ = 'Dimension_Parent'
+    Parent_ID = Column(Integer, primary_key=True)
+    MainName = Column(String)
+    ForeNames = Column(String)
+    Occupation = Column(String)
+
+class Dimension_Residence(Base):
+    __tablename__ = 'Dimension_Residence'
+    Residence_ID = Column(Integer, primary_key=True)
+    Residence_Date = Column(String)
+    Residence_Town = Column(String)
+    Residence_Street = Column(String)
+    Residence_City = Column(String)
+    Residence_County = Column(String)
+    Residence_Country = Column(String)
+
+
+class Dimension_Wealth(Base):
+    __tablename__ = 'Dimension_Wealth'
+    Wealth_ID = Column(Integer, primary_key=True)
+    Wealth_Amount = Column(BigInteger)  # Changed from Integer to BigInteger
+    Wealth_Probate_Date = Column(String)
+    Wealth_Abbreviation = Column(String)
+
+
+class Dimension_Education(Base):
+    __tablename__ = 'Dimension_Education'
+    Education_ID = Column(Integer, primary_key=True)
+    Schools = Column(String)
+    No_of_Schools = Column(Integer)
+    School_1_City = Column(String)
+    School_1_Country = Column(String)
+    College_1 = Column(String)
+    College_1_City = Column(String)
+    College_1_Country = Column(String)
+    School_2_City = Column(String)
+    School_2_Country = Column(String)
+
+class Dimension_Spouse(Base):
+    __tablename__ = 'Dimension_Spouse'
+    Spouse_ID = Column(Integer, primary_key=True)
+    Spouse_Names = Column(String)
+    No_of_Spouse = Column(Integer)
+
+class Dimension_Taxonomy(Base):
+    __tablename__ = 'Dimension_Taxonomy'
+    Taxonomy_ID = Column(Integer, primary_key=True)
+    Taxonomy_Terms = Column(String)
+    Institutions = Column(String)
+
+#engine = create_engine(connection_url, echo=True)
+
+# Create all tables in the database defined by Base's subclasses
+Base.metadata.create_all(engine)
+
+#print(final_data_df.columns)
+
+## Assuming the session and Base are already defined as per previous setup
+
+# Function to populate Dimension Tables
+def populate_dimension_tables(session, df):
+    # Populate the Dimension_Gender
+    genders = df[['Gender']].drop_duplicates().dropna()
+    genders = [Dimension_Gender(Gender=row['Gender']) for index, row in genders.iterrows()]
+    session.bulk_save_objects(genders)
+
+    # Populate the Dimension_Birth
+    births = df[['Birth', 'Birth_Year', 'Birth Place - Town', 'Birth Place - City', 'Birth Place - County', 'Birth Place - Country']].drop_duplicates().dropna()
+    births = [Dimension_Birth(Birth=row['Birth'], Birth_Year=row['Birth_Year'], Birth_Town=row['Birth Place - Town'],
+                               Birth_City=row['Birth Place - City'], Birth_County=row['Birth Place - County'],
+                               Birth_Country=row['Birth Place - Country']) for index, row in births.iterrows()]
+    session.bulk_save_objects(births)
+
+    # Populate the Dimension_Death
+    deaths = df[['Death', 'Death_Year', 'Death Place - Town', 'Death Place - City', 'Death Place - County', 'Death Place - Country']].drop_duplicates().dropna()
+    deaths = [Dimension_Death(Death=row['Death'], Death_Year=row['Death_Year'], Death_Town=row['Death Place - Town'],
+                              Death_City=row['Death Place - City'], Death_County=row['Death Place - County'],
+                              Death_Country=row['Death Place - Country']) for index, row in deaths.iterrows()]
+    session.bulk_save_objects(deaths)
+
+    # Populate the Dimension_Occupation
+    occupations = df[['Occupation', 'Alternative Names']].drop_duplicates().dropna()
+    occupations = [Dimension_Occupation(Occupation=row['Occupation'], Alternative_Names=row['Alternative Names']) for index, row in occupations.iterrows()]
+    session.bulk_save_objects(occupations)
+
+    # Populate the Dimension_Residence
+    residences = df[['Residence_Date', 'Residence_Town', 'Residence_Street', 'Residence_City', 'Residence_County', 'Residence_Country']].drop_duplicates().dropna()
+    residences = [Dimension_Residence(Residence_Date=row['Residence_Date'], Residence_Town=row['Residence_Town'],
+                                      Residence_Street=row['Residence_Street'], Residence_City=row['Residence_City'],
+                                      Residence_County=row['Residence_County'], Residence_Country=row['Residence_Country'])
+                   for index, row in residences.iterrows()]
+    session.bulk_save_objects(residences)
+
+    # Populate the Dimension_Wealth
+    wealths = df[['Wealth_Amount', 'Wealth_Probate_Date', 'Wealth_Abbreviation']].drop_duplicates().dropna()
+    wealths['Wealth_Amount'] = pd.to_numeric(wealths['Wealth_Amount'], errors='coerce')  # Convert to numeric, set 'N/A' to NaN
+    wealths = [Dimension_Wealth(
+        Wealth_Amount=row['Wealth_Amount'] if pd.notna(row['Wealth_Amount']) else None,  # Insert None if NaN
+        Wealth_Probate_Date=row['Wealth_Probate_Date'],
+        Wealth_Abbreviation=row['Wealth_Abbreviation']
+    ) for index, row in wealths.iterrows()]
+    session.bulk_save_objects(wealths)
+
+    # Populate the Dimension_Education
+    educations = df[['Schools', 'No_of_Schools', 'School_1_City', 'School_1_Country', 'College_1', 'College_1_City', 'College_1_Country', 'School_2_City', 'School_2_Country']].drop_duplicates().dropna()
+    educations = [Dimension_Education(Schools=row['Schools'], No_of_Schools=row['No_of_Schools'], School_1_City=row['School_1_City'],
+                                      School_1_Country=row['School_1_Country'], College_1=row['College_1'],
+                                      College_1_City=row['College_1_City'], College_1_Country=row['College_1_Country'],
+                                      School_2_City=row['School_2_City'], School_2_Country=row['School_2_Country'])
+                  for index, row in educations.iterrows()]
+    session.bulk_save_objects(educations)
+
+    # Populate the Dimension_Spouse
+    spouses = df[['Spouse_Names', 'No_of_Spouse']].drop_duplicates().dropna()
+    spouses = [Dimension_Spouse(Spouse_Names=row['Spouse_Names'], No_of_Spouse=row['No_of_Spouse']) for index, row in spouses.iterrows()]
+    session.bulk_save_objects(spouses)
+
+    # Populate the Dimension_Taxonomy
+    taxonomies = df[['Taxonomy_Terms', 'Institutions']].drop_duplicates().dropna()
+    taxonomies = [Dimension_Taxonomy(Taxonomy_Terms=row['Taxonomy_Terms'], Institutions=row['Institutions']) for index, row in taxonomies.iterrows()]
+    session.bulk_save_objects(taxonomies)
+
+    # Commit changes to the database
+    session.commit()
+
+## Set up the sessionmaker
+Session = sessionmaker(bind=engine)
+
+# Create a session
+session = Session()
+populate_dimension_tables(session, final_data_df)
+
+#
+class Fact_PersonalInfo(Base):
+    __tablename__ = 'Fact_PersonalInfo'
+    Person_ID = Column(Integer, primary_key=True)
+    Gender_ID = Column(Integer, ForeignKey('Dimension_Gender.Gender_ID'))
+    Birth_ID = Column(Integer, ForeignKey('Dimension_Birth.Birth_ID'))
+    Death_ID = Column(Integer, ForeignKey('Dimension_Death.Death_ID'))
+    Occupation_ID = Column(Integer, ForeignKey('Dimension_Occupation.Occupation_ID'))
+    Father_ID = Column(Integer, ForeignKey('Dimension_Parent.Parent_ID'))
+    Mother_ID = Column(Integer, ForeignKey('Dimension_Parent.Parent_ID'))
+    Residence_ID = Column(Integer, ForeignKey('Dimension_Residence.Residence_ID'))
+    Wealth_ID = Column(Integer, ForeignKey('Dimension_Wealth.Wealth_ID'))
+    Education_ID = Column(Integer, ForeignKey('Dimension_Education.Education_ID'))
+    Spouse_ID = Column(Integer, ForeignKey('Dimension_Spouse.Spouse_ID'))
+    Taxonomy_ID = Column(Integer, ForeignKey('Dimension_Taxonomy.Taxonomy_ID'))
+
+# Assuming engine is already defined and imported
+Base.metadata.create_all(engine)  # This creates the table in the database
+
+
+#def clean_numeric(value):
+    """ Removes any non-numeric characters except for the decimal point. """
+    if isinstance(value, str):
+        return re.sub(r'[^\d.]', '', value)
+    return value
+
+#from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
+
+def get_unique_id(query, description):
+    try:
+        return query.scalar()
+    except MultipleResultsFound:
+        print(f"Warning: Multiple entries found for {description}. Using the first one.")
+        return query.first().id
+    except NoResultFound:
+        print(f"No entry found for {description}.")
+        return None
+
+def populate_fact_table(session, df):
+    for index, row in df.iterrows():
+        try:
+            fact = Fact_PersonalInfo(
+                Gender_ID=get_unique_id(session.query(Dimension_Gender.Gender_ID).filter(Dimension_Gender.Gender == row['Gender']), 'Gender'),
+                Birth_ID=get_unique_id(session.query(Dimension_Birth.Birth_ID).filter(Dimension_Birth.Birth == row['Birth']), 'Birth'),
+                Death_ID=get_unique_id(session.query(Dimension_Death.Death_ID).filter(Dimension_Death.Death == row['Death']), 'Death'),
+                Occupation_ID=get_unique_id(session.query(Dimension_Occupation.Occupation_ID).filter(Dimension_Occupation.Occupation == row['Occupation']), 'Occupation'),
+                Father_ID=get_unique_id(session.query(Dimension_Parent.Parent_ID).filter(Dimension_Parent.MainName == row['Father_MainName']), 'Father'),
+                Mother_ID=get_unique_id(session.query(Dimension_Parent.Parent_ID).filter(Dimension_Parent.MainName == row['Mother_MainName']), 'Mother'),
+                Residence_ID=get_unique_id(session.query(Dimension_Residence.Residence_ID).filter(Dimension_Residence.Residence_Town == row['Residence_Town']), 'Residence'),
+                Wealth_ID=get_unique_id(session.query(Dimension_Wealth.Wealth_ID).filter(Dimension_Wealth.Wealth_Amount == row['Wealth_Amount']), 'Wealth'),
+                Education_ID=get_unique_id(session.query(Dimension_Education.Education_ID).filter(Dimension_Education.Schools == row['Schools']), 'Education'),
+                Spouse_ID=get_unique_id(session.query(Dimension_Spouse.Spouse_ID).filter(Dimension_Spouse.Spouse_Names == row['Spouse_Names']), 'Spouse'),
+                Taxonomy_ID=get_unique_id(session.query(Dimension_Taxonomy.Taxonomy_ID).filter(Dimension_Taxonomy.Taxonomy_Terms == row['Taxonomy_Terms']), 'Taxonomy')
+            )
+            session.add(fact)
+        except Exception as e:
+            print(f"An error occurred: {e}")
+    session.commit()
+
+
+## Example usage with a DataFrame (assuming session and DataFrame final_data_df are defined)
+populate_fact_table(session, final_data_df)
+
+#
+
+#
+
+#
+
